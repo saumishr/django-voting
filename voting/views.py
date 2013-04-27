@@ -4,8 +4,10 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.views import redirect_to_login
 from django.template import loader, RequestContext
 from django.utils import simplejson
-
+from django.contrib.comments.models import Comment
 from voting.models import Vote
+from actstream import action
+from django.utils.translation import ugettext_lazy as _
 
 VOTE_DIRECTIONS = (('up', 1), ('down', -1), ('clear', 0))
 
@@ -117,9 +119,9 @@ def xmlhttprequest_vote_on_object(request, model, direction,
             Contains an error message if the vote was not successfully
             processed.
     """
-    if request.method == 'GET':
-        return json_error_response(
-            'XMLHttpRequest votes can only be made using POST.')
+    #if request.method == 'GET':
+    #    return json_error_response(
+    #        'XMLHttpRequest votes can only be made using POST.')
     if not request.user.is_authenticated():
         return json_error_response('Not authenticated.')
 
@@ -146,8 +148,38 @@ def xmlhttprequest_vote_on_object(request, model, direction,
             'No %s found for %s.' % (model._meta.verbose_name, lookup_kwargs))
 
     # Vote and respond
-    Vote.objects.record_vote(obj, request.user, vote)
-    return HttpResponse(simplejson.dumps({
-        'success': True,
-        'score': Vote.objects.get_score(obj),
-    }))
+    if request.method == 'GET':
+        return HttpResponse(simplejson.dumps({
+            'success': True,
+            'score': Vote.objects.get_score(obj),
+        }))
+    else:
+        preVote = Vote.objects.get_score(obj)
+        Vote.objects.record_vote(obj, request.user, vote)
+        postVote = Vote.objects.get_score(obj)
+        if preVote != postVote:
+            if vote==1:
+                if model.__name__=='Album':
+                    action.send(request.user, verb=_('liked the album'), target=obj)
+                if model.__name__=='ThreadedComment':
+                    action.send(request.user, verb=_('liked the comment on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                if model.__name__=='Image':
+                    action.send(request.user, verb=_('liked the photo'), target=obj)
+                obj.user.num_likes = obj.user.num_likes + 1
+                obj.user.save()
+            elif vote==-1:
+                if model.__name__=='Album':
+                    action.send(request.user, verb=_('disliked the album'), target=obj) 
+                if model.__name__=='ThreadedComment':
+                    action.send(request.user, verb=_('disliked the comment on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)   
+                if model.__name__=='Image':
+                    action.send(request.user, verb=_('disliked the photo'), target=obj) 
+                obj.user.num_dislikes = obj.user.num_dislikes + 1 
+                obj.user.save()
+            elif vote==0:
+             obj.user.num_likes = obj.user.num_likes - 1
+             obj.user.save()   
+        return HttpResponse(simplejson.dumps({
+            'success': True,
+            'score': Vote.objects.get_score(obj),
+        }))
