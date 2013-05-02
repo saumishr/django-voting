@@ -56,6 +56,22 @@ class VoteManager(models.Manager):
             'num_down_votes': (-1)*(int(result[1])-int(result[0]))/2,
         }
 
+    def get_voters(self, obj):
+        """
+        Get a dictionary containing the total score for ``obj`` and
+        the number of votes it's received.
+        """
+        ctype = ContentType.objects.get_for_model(obj)
+        result = self.filter(object_id=obj._get_pk_val(),
+                             content_type=ctype)
+        voters =[] 
+        for voteObject in result:
+           voters.append(voteObject.user)
+
+        return {
+            'voters':voters,
+        }
+
     def get_scores_in_bulk(self, objects):
         """
         Get a dictionary mapping object ids to total score and number
