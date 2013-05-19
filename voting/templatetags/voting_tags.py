@@ -1,7 +1,10 @@
 from django import template
 from django.utils.html import escape
+from django.contrib.contenttypes.models import ContentType
+from django.core.urlresolvers import reverse
 
 from voting.models import Vote
+
 
 register = template.Library()
 
@@ -28,9 +31,10 @@ class VotersForObjectNode(template.Node):
     def render(self, context):
         try:
             object = template.resolve_variable(self.object, context)
+            content_type = ContentType.objects.get_for_model(object).pk
         except template.VariableDoesNotExist:
             return ''
-        context[self.context_var] = Vote.objects.get_voters(object)
+        context[self.context_var] = reverse('get_voters_info', kwargs={'content_type_id': content_type, 'object_id': object.pk })
         return ''  
 
 class ScoresForObjectsNode(template.Node):

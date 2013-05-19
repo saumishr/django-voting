@@ -5,9 +5,11 @@ from django.contrib.auth.views import redirect_to_login
 from django.template import loader, RequestContext
 from django.utils import simplejson
 from django.contrib.comments.models import Comment
+from django.utils.translation import ugettext_lazy as _
+from django.shortcuts import render_to_response, get_object_or_404
 from voting.models import Vote
 from actstream import action
-from django.utils.translation import ugettext_lazy as _
+
 
 VOTE_DIRECTIONS = (('up', 1), ('down', -1), ('clear', 0))
 
@@ -183,3 +185,11 @@ def xmlhttprequest_vote_on_object(request, model, direction,
             'success': True,
             'score': Vote.objects.get_score(obj),
         }))
+
+def get_voters_info(request, content_type_id, object_id):
+    ctype = get_object_or_404(ContentType, pk=content_type_id)
+    object = get_object_or_404(ctype.model_class(), pk=object_id)
+
+    return render_to_response("friend_list_all.html", {
+        "friends": Vote.objects.get_voters(object),
+    }, context_instance=RequestContext(request))

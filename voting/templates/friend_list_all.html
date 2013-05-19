@@ -1,0 +1,25 @@
+{#% extends "base.html" %#}
+{% load i18n %}
+{#% block title %}{% trans "Find Friends" %}{% endblock %#}
+
+{% block content %}
+
+<ul>
+                {% for friend in friends.voters %}
+                    <li style='list-style-type:None;display: inline;float:left;border-width:2px;border-style:inset;padding:4px;margin:4px;'>
+                        <a href='{{friend.get_absolute_url}}'>
+                            {{ friend }}
+                        </a>
+                        {% if friend.get_profile.profile_photo%}
+                            <img src='{{ friend.get_profile.profile_photo.url }}'>
+                        {% elif friend.get_profile.image_url %}
+                            <img src='{{ friend.get_profile.image_url }}'>
+                        {% else %}
+                            <img src='{{ STATIC_URL }}img/defaultProfilePic.gif'>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+
+</ul>
+
+{% endblock %}
