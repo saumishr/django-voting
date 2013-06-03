@@ -173,6 +173,8 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action.send(request.user, verb=_('liked the review on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__=='Image':
                     action.send(request.user, verb=_('liked the photo'), target=obj)
+                if model.__name__=='Broadcast':
+                    action.send(request.user, verb=_('liked the post'), action_object=obj)
                 obj.user.num_likes = obj.user.num_likes + 1
                 obj.user.save()
             elif vote==-1:
@@ -183,7 +185,9 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                 if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, BlogPost):
                     action.send(request.user, verb=_('disliked the review on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)  
                 if model.__name__=='Image':
-                    action.send(request.user, verb=_('disliked the photo'), target=obj) 
+                    action.send(request.user, verb=_('disliked the photo'), target=obj)
+                if model.__name__=='Broadcast':
+                    action.send(request.user, verb=_('disliked the post'), action_object=obj) 
                 obj.user.num_dislikes = obj.user.num_dislikes + 1 
                 obj.user.save()
             elif vote==0:
