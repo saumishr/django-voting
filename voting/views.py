@@ -13,7 +13,7 @@ from mezzanine.blog.models import BlogPost
 
 from voting.models import Vote
 from actstream import action
-
+from imagestore.models import Album
 
 VOTE_DIRECTIONS = (('up', 1), ('down', -1), ('clear', 0))
 
@@ -175,6 +175,8 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action.send(request.user, verb=_('liked the photo'), target=obj)
                 if model.__name__=='Broadcast':
                     action.send(request.user, verb=_('liked the post'), action_object=obj)
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
+                    action.send(request.user, verb=_('liked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 obj.user.num_likes = obj.user.num_likes + 1
                 obj.user.save()
             elif vote==-1:
@@ -188,6 +190,8 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action.send(request.user, verb=_('disliked the photo'), target=obj)
                 if model.__name__=='Broadcast':
                     action.send(request.user, verb=_('disliked the post'), action_object=obj) 
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
+                    action.send(request.user, verb=_('disliked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 obj.user.num_dislikes = obj.user.num_dislikes + 1 
                 obj.user.save()
             elif vote==0:
