@@ -173,8 +173,8 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action.send(request.user, verb=_('liked the review on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__=='Image':
                     action.send(request.user, verb=_('liked the photo'), target=obj)
-                if model.__name__=='Broadcast':
-                    action.send(request.user, verb=_('liked the post'), action_object=obj)
+                if model.__name__=='UserWishRadio':
+                    action.send(request.user, verb=_('liked the wish'), action_object=obj)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
                     action.send(request.user, verb=_('liked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
@@ -190,8 +190,8 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action.send(request.user, verb=_('disliked the review on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)  
                 if model.__name__=='Image':
                     action.send(request.user, verb=_('disliked the photo'), target=obj)
-                if model.__name__=='Broadcast':
-                    action.send(request.user, verb=_('disliked the post'), action_object=obj) 
+                if model.__name__=='UserWishRadio':
+                    action.send(request.user, verb=_('disliked the wish'), action_object=obj) 
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
                     action.send(request.user, verb=_('disliked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
