@@ -14,6 +14,7 @@ from mezzanine.blog.models import BlogPost
 from voting.models import Vote
 from actstream import action
 from imagestore.models import Album, Image
+from userProfile.models import UserWishRadio
 
 VOTE_DIRECTIONS = (('up', 1), ('down', -1), ('clear', 0))
 
@@ -178,7 +179,9 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
                     action.send(request.user, verb=_('liked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
-                    action.send(request.user, verb=_('liked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object) 
+                    action.send(request.user, verb=_('liked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, UserWishRadio):
+                    action.send(request.user, verb=_('liked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)  
                 obj.user.num_likes = obj.user.num_likes + 1
                 obj.user.save()
             elif vote==-1:
@@ -196,6 +199,8 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action.send(request.user, verb=_('disliked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
                     action.send(request.user, verb=_('disliked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, UserWishRadio):
+                    action.send(request.user, verb=_('disliked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object) 
                 obj.user.num_dislikes = obj.user.num_dislikes + 1 
                 obj.user.save()
             elif vote==0:
