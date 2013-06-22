@@ -8,7 +8,7 @@ from django.contrib.comments.models import Comment
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response, get_object_or_404
 
-from mezzanine.generic.models import ThreadedComment
+from mezzanine.generic.models import ThreadedComment, Review
 from mezzanine.blog.models import BlogPost
 
 from voting.models import Vote
@@ -168,9 +168,9 @@ def xmlhttprequest_vote_on_object(request, model, direction,
             if vote==1:
                 if model.__name__=='Album':
                     action.send(request.user, verb=_('liked the album'), target=obj)
-                if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, ThreadedComment):
+                if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, Review):
                     action.send(request.user, verb=_('liked the comment on the review'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
-                if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, BlogPost):
+                if model.__name__=='Review' and isinstance(Comment.objects.get(id=obj.id).content_object, BlogPost):
                     action.send(request.user, verb=_('liked the review on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__=='Image':
                     action.send(request.user, verb=_('liked the photo'), target=obj)
@@ -187,9 +187,9 @@ def xmlhttprequest_vote_on_object(request, model, direction,
             elif vote==-1:
                 if model.__name__=='Album':
                     action.send(request.user, verb=_('disliked the album'), target=obj) 
-                if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, ThreadedComment):
+                if model.__name__=='Review' and isinstance(Comment.objects.get(id=obj.id).content_object, ThreadedComment):
                     action.send(request.user, verb=_('disliked the comment on the review'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)   
-                if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, BlogPost):
+                if model.__name__=='Review' and isinstance(Comment.objects.get(id=obj.id).content_object, BlogPost):
                     action.send(request.user, verb=_('disliked the review on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)  
                 if model.__name__=='Image':
                     action.send(request.user, verb=_('disliked the photo'), target=obj)
