@@ -187,7 +187,7 @@ def xmlhttprequest_vote_on_object(request, model, direction,
             elif vote==-1:
                 if model.__name__=='Album':
                     action.send(request.user, verb=_('disliked the album'), target=obj) 
-                if model.__name__=='Review' and isinstance(Comment.objects.get(id=obj.id).content_object, ThreadedComment):
+                if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, Review):
                     action.send(request.user, verb=_('disliked the comment on the review'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)   
                 if model.__name__=='Review' and isinstance(Comment.objects.get(id=obj.id).content_object, BlogPost):
                     action.send(request.user, verb=_('disliked the review on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)  
