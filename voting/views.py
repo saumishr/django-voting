@@ -185,8 +185,8 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                         """
                         Do Nothing
                         """
-                    Follow.objects.get_or_create(request.user, obj)
-                    actions.follow(request.user, obj, send_action=False, actor_only=False)                    
+                    actions.follow(request.user, obj, send_action=False, actor_only=False)
+                    Follow.objects.get_or_create(request.user, obj)                    
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
                     action.send(request.user, verb=_('liked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
@@ -202,8 +202,8 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                         """
                         Do Nothing
                         """
-                    Follow.objects.get_or_create(request.user, contentObject)
                     actions.follow(request.user, contentObject, send_action=False, actor_only=False) 
+                    Follow.objects.get_or_create(request.user, contentObject)
                 if obj.user and obj.user.is_authenticated():
                     obj.user.num_likes = obj.user.num_likes + 1
                     obj.user.save()
@@ -226,9 +226,9 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                         """
                         Do Nothing
                         """
+                    actions.unfollow(request.user, obj, send_action=False)
                     follow = Follow.objects.get_follows(obj).filter(user=request.user)
                     follow.delete()
-                    actions.unfollow(request.user, obj, send_action=False)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
                     action.send(request.user, verb=_('disliked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
@@ -244,9 +244,9 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                         """
                         Do Nothing
                         """
+                    actions.unfollow(request.user, contentObject, send_action=False)
                     follow = Follow.objects.get_follows(contentObject).filter(user=request.user)
                     follow.delete()
-                    actions.unfollow(request.user, contentObject, send_action=False)
                 if obj.user and obj.user.is_authenticated(): 
                     obj.user.num_dislikes = obj.user.num_dislikes + 1 
                     obj.user.save()
