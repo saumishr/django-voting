@@ -7,14 +7,15 @@ from django.utils import simplejson
 from django.contrib.comments.models import Comment
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response, get_object_or_404
-
+from django.contrib.auth.models import User
 from mezzanine.generic.models import ThreadedComment, Review
 from mezzanine.blog.models import BlogPost
 
 from voting.models import Vote
-from actstream import action
+from actstream import action, actions
 from imagestore.models import Album, Image
 from userProfile.models import UserWishRadio
+from follow.models import Follow
 
 VOTE_DIRECTIONS = (('up', 1), ('down', -1), ('clear', 0))
 
@@ -175,13 +176,34 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                 if model.__name__=='Image':
                     action.send(request.user, verb=_('liked the photo'), target=obj)
                 if model.__name__=='UserWishRadio':
-                    action.send(request.user, verb=_('liked the wish'), action_object=obj)
+                    owner = obj.content_type.get_object_for_this_type(pk=obj.object_id)
+                    if isinstance(owner, BlogPost):
+                        action.send(request.user, verb=_('liked the deal'), action_object=obj)
+                    elif isinstance(owner, User):
+                        action.send(request.user, verb=_('liked the wish'), action_object=obj)
+                    else:
+                        """
+                        Do Nothing
+                        """
+                    Follow.objects.get_or_create(request.user, obj)
+                    actions.follow(request.user, obj, send_action=False, actor_only=False)                    
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
                     action.send(request.user, verb=_('liked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
                     action.send(request.user, verb=_('liked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, UserWishRadio):
-                    action.send(request.user, verb=_('liked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)  
+                    contentObject = Comment.objects.get(id=obj.id).content_object
+                    owner = contentObject.content_type.get_object_for_this_type(pk=contentObject.object_id)
+                    if isinstance(owner, BlogPost):
+                        action.send(request.user, verb=_('liked the comment on the deal'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                    elif isinstance(owner, User):
+                        action.send(request.user, verb=_('liked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                    else:
+                        """
+                        Do Nothing
+                        """
+                    Follow.objects.get_or_create(request.user, contentObject)
+                    actions.follow(request.user, contentObject, send_action=False, actor_only=False) 
                 if obj.user and obj.user.is_authenticated():
                     obj.user.num_likes = obj.user.num_likes + 1
                     obj.user.save()
@@ -195,13 +217,36 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                 if model.__name__=='Image':
                     action.send(request.user, verb=_('disliked the photo'), target=obj)
                 if model.__name__=='UserWishRadio':
-                    action.send(request.user, verb=_('disliked the wish'), action_object=obj) 
+                    owner = obj.content_type.get_object_for_this_type(pk=obj.object_id)
+                    if isinstance(owner, BlogPost):
+                        action.send(request.user, verb=_('disliked the deal'), action_object=obj)
+                    elif isinstance(owner, User):
+                        action.send(request.user, verb=_('disliked the wish'), action_object=obj)
+                    else:
+                        """
+                        Do Nothing
+                        """
+                    follow = Follow.objects.get_follows(obj).get(user=request.user)
+                    follow.delete()
+                    actions.unfollow(request.user, contentObject, send_action=False)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
                     action.send(request.user, verb=_('disliked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
                     action.send(request.user, verb=_('disliked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, UserWishRadio):
-                    action.send(request.user, verb=_('disliked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                    contentObject = Comment.objects.get(id=obj.id).content_object
+                    owner = contentObject.content_type.get_object_for_this_type(pk=contentObject.object_id)
+                    if isinstance(owner, BlogPost):
+                        action.send(request.user, verb=_('disliked the comment on the deal'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                    elif isinstance(owner, User):
+                        action.send(request.user, verb=_('disliked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                    else:
+                        """
+                        Do Nothing
+                        """
+                    follow = Follow.objects.get_follows(contentObject).get(user=request.user)
+                    follow.delete()
+                    actions.unfollow(request.user, contentObject, send_action=False)
                 if obj.user and obj.user.is_authenticated(): 
                     obj.user.num_dislikes = obj.user.num_dislikes + 1 
                     obj.user.save()
