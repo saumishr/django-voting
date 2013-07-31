@@ -89,6 +89,7 @@ def vote_on_object(request, model, direction, post_vote_redirect=None,
                                  'the request, or the object being voted on '
                                  'must define a get_absolute_url method or '
                                  'property.')
+
         Vote.objects.record_vote(obj, request.user, vote)
         return HttpResponseRedirect(next)
     else:
@@ -234,23 +235,18 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     target_content_type = ContentType.objects.get_for_model(obj)
                     Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the photo', target_content_type=target_content_type, target_object_id = obj.id ).delete() 
                 if model.__name__=='UserWishRadio':
-                    owner = obj.content_type.get_object_for_this_type(pk=obj.id)
                     ctype = ContentType.objects.get_for_model(request.user)
-                    if isinstance(owner, BlogPost):
-                        #action.send(request.user, verb=_('disliked the deal'), action_object=obj)
-                        action_object_content_type = ContentType.objects.get_for_model(obj)
+                    action_object_content_type = ContentType.objects.get_for_model(obj)
+                    if obj.prefix_message == "I have a deal for":
                         Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the deal', action_object_content_type=action_object_content_type, action_object_object_id=obj.id ).delete()                 
-                    elif isinstance(owner, User):
-                        #action.send(request.user, verb=_('disliked the wish'), action_object=obj)
-                        action_object_content_type = ContentType.objects.get_for_model(obj)
+                    elif obj.prefix_message == "I wish to buy":
                         Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the wish', action_object_content_type=action_object_content_type, action_object_object_id=obj.id ).delete()                 
-                    else:
-                        """
-                        Do Nothing
-                        """
+                    
                     actions.unfollow(request.user, obj, send_action=False)
                     follow = Follow.objects.get_follows(obj).filter(user=request.user)
-                    follow.delete()
+                    if follow:
+                        follow.delete()
+
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
                     #action.send(request.user, verb=_('disliked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                     target = Comment.objects.get(id=obj.id).content_object
@@ -266,29 +262,24 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action_object_content_type = ContentType.objects.get_for_model(obj)
                     Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the comment on the image', action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                 
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, UserWishRadio):
-                    contentObject = Comment.objects.get(id=obj.id).content_object
-                    owner = contentObject.content_type.get_object_for_this_type(pk=contentObject.object_id)
-                    if isinstance(owner, BlogPost):
+                    target = Comment.objects.get(id=obj.id).content_object
+                    ctype = ContentType.objects.get_for_model(request.user)
+                    target_content_type = ContentType.objects.get_for_model(target)
+                    action_object_content_type = ContentType.objects.get_for_model(obj)
+                    if target.prefix_message == "I have a deal for":
                         #action.send(request.user, verb=_('disliked the comment on the deal'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
-                        target = Comment.objects.get(id=obj.id).content_object
-                        ctype = ContentType.objects.get_for_model(request.user)
-                        target_content_type = ContentType.objects.get_for_model(target)
-                        action_object_content_type = ContentType.objects.get_for_model(obj)
                         Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the comment on the deal', action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                         
-                    elif isinstance(owner, User):
+                    elif target.prefix_message == "I wish to buy":
                         #action.send(request.user, verb=_('disliked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
-                        target = Comment.objects.get(id=obj.id).content_object
-                        ctype = ContentType.objects.get_for_model(request.user)
-                        target_content_type = ContentType.objects.get_for_model(target)
-                        action_object_content_type = ContentType.objects.get_for_model(obj)
                         Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the comment on the wish', action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                     
                     else:
                         """
                         Do Nothing
                         """
-                    actions.unfollow(request.user, contentObject, send_action=False)
-                    follow = Follow.objects.get_follows(contentObject).filter(user=request.user)
-                    follow.delete()
+                    actions.unfollow(request.user, target, send_action=False)
+                    follow = Follow.objects.get_follows(target).filter(user=request.user)
+                    if follow:
+                        follow.delete()
                 if obj.user and obj.user.is_authenticated() and vote==-1: 
                     obj.user.num_dislikes = obj.user.num_dislikes + 1 
                     obj.user.save()
