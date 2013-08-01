@@ -222,8 +222,9 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     target_content_type = ContentType.objects.get_for_model(target)
                     action_object_content_type = ContentType.objects.get_for_model(obj)
                     Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the comment on the review', action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()
-                if model.__name__=='Review' and isinstance(Comment.objects.get(id=obj.id).content_object, BlogPost):
+                if model.__name__=='Review':
                     #action.send(request.user, verb=_('disliked the review on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)  
+                    ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(obj)
                     Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the review', target_content_type=target_content_type, target_object_id = obj.id ).delete()                 
                 if model.__name__=='Image':
