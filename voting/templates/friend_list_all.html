@@ -1,25 +1,46 @@
 {#% extends "base.html" %#}
 {% load i18n %}
 {#% block title %}{% trans "Find Friends" %}{% endblock %#}
+{% load thumbnail %}
+{% load relationship_tags follow_tags %}
 
 {% block content %}
 
-<ul>
-                {% for friend in friends.voters %}
-                    <li style='list-style-type:None;display: inline;float:left;border-width:2px;border-style:inset;padding:4px;margin:4px;'>
-                        <a href='{{friend.get_absolute_url}}'>
-                            {{ friend }}
-                        </a>
-                        {% if friend.get_profile.profile_photo%}
-                            <img src='{{ friend.get_profile.profile_photo.url }}'>
-                        {% elif friend.get_profile.image_url %}
-                            <img src='{{ friend.get_profile.image_url }}'>
-                        {% else %}
-                            <img src='{{ STATIC_URL }}img/defaultProfilePic.gif'>
-                        {% endif %}
-                    </li>
-                {% endfor %}
+<table>
+{% for friend in friends.voters %}
+    <tr>
+    <td>
+    <a href='{{friend.get_absolute_url}}'>
+        {% if friend.get_profile.profile_photo %}
+            {% thumbnail friend.get_profile.profile_photo "90x90" as img %} 
+            <img style="margin-right:20px;" src="{{ MEDIA_URL }}{{img}}">
+            {% endthumbnail %}
+        {% elif friend.get_profile.image_url %}
+            <img style="margin-right:20px;" src="{{ friend.get_profile.image_url }}">
+        {% else %}
+            <img style="margin-right:20px;height=80px;width:80px;" src="{{ STATIC_URL }}img/defaultProfilePic.gif"> 
+        {% endif %}
+    </a>
+    </td>
+    <td>
+      <a href='{{friend.get_absolute_url}}'>{{ friend }}</a>  
+    </td>
+    {% if friend != request.user %}
+        <td>
+        <div id="followContainer" {% if_relationship request.user friend "following" %}
+                                        class="following follow-button-container action-follow-user"
+                                  {% else %}
+                                       class="follow-button-container action-follow-user" 
+                                  {% endif_relationship %} style="position:relative;right:-50px;">
 
-</ul>
+            <a  href="{{ friend|add_relationship_url:"following" }}" class="follow-btn form-button form-button-follow form-button-small form-button-default form-button-left-icon form-button-icon-follow">Follow</a>
+            <a class="form-button form-button-following form-button-small form-button-light-and-grey form-button-left-icon form-button-icon-following">Following</a>
+            <a  href="{{ friend|remove_relationship_url:"following" }}" class="unfollow-btn form-button form-button-unfollow form-button-small form-button-red form-button-left-icon form-button-icon-unfollow">Unfollow</a>
+        </div> 
+        </td>
+    {% endif %}
+    </tr>
+{% endfor %}
+</table>
 
 {% endblock %}
