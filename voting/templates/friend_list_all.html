@@ -10,28 +10,14 @@
 {% for friend in friends.voters %}
     <tr>
     <td>
-    <a href='{{friend.get_absolute_url}}'>
-        {% if friend.get_profile.profile_photo %}
-            {% thumbnail friend.get_profile.profile_photo "90x90" as img %} 
-            <img style="margin-right:20px;" src="{{ MEDIA_URL }}{{img}}">
-            {% endthumbnail %}
-        {% elif friend.get_profile.image_url %}
-            <img style="margin-right:20px;" src="{{ friend.get_profile.image_url }}">
-        {% else %}
-            <img style="margin-right:20px;height=80px;width:80px;" src="{{ STATIC_URL }}img/defaultProfilePic.gif"> 
-        {% endif %}
-    </a>
+        {% include 'generic/includes/render_owner.html' with owner=friend %}
     </td>
     <td>
       <a href='{{friend.get_absolute_url}}'>{{ friend }}</a>  
     </td>
     {% if friend != request.user %}
         <td>
-        <div id="followContainer" {% if_relationship request.user friend "following" %}
-                                        class="following follow-button-container action-follow-user"
-                                  {% else %}
-                                       class="follow-button-container action-follow-user" 
-                                  {% endif_relationship %} style="position:relative;right:-50px;">
+        <div class="follow-button-container action-follow-user {% if_relationship request.user friend "following" %}following{% endif_relationship %} style="position:relative;right:-50px;">
 
             <a  href="{{ friend|add_relationship_url:"following" }}" class="follow-btn form-button form-button-follow form-button-small form-button-default form-button-left-icon form-button-icon-follow">Follow</a>
             <a class="form-button form-button-following form-button-small form-button-light-and-grey form-button-left-icon form-button-icon-following">Following</a>
