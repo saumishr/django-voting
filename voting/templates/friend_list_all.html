@@ -10,10 +10,10 @@
 {% for friend in friends.voters %}
     <tr>
     <td>
-        {% include 'generic/includes/render_owner.html' with owner=friend %}
+      {% include 'generic/includes/render_owner.html' with owner=friend %}
     </td>
     <td>
-      <a href='{{friend.get_absolute_url}}'>{{ friend }}</a>  
+      {% include 'actstream/render_actor_name.html' with actor=friend %}  
     </td>
     {% if friend != request.user %}
         <td>
