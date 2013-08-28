@@ -8,6 +8,8 @@ from django.contrib.comments.models import Comment
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response, get_object_or_404
 from django.contrib.auth.models import User
+from django.conf import settings
+
 from mezzanine.generic.models import ThreadedComment, Review
 from mezzanine.blog.models import BlogPost
 
@@ -170,19 +172,19 @@ def xmlhttprequest_vote_on_object(request, model, direction,
         if preVote != postVote:
             if vote==1:
                 if model.__name__=='Album':
-                    action.send(request.user, verb=_('liked the album'), target=obj, batch_time_minutes=30, is_batchable=True)
+                    action.send(request.user, verb=settings.ALBUM_LIKE_WISH, target=obj, batch_time_minutes=30, is_batchable=True)
                 if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, Review):
-                    action.send(request.user, verb=_('liked the comment on the review'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                    action.send(request.user, verb=settings.REVIEW_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                 if model.__name__=='Review' and isinstance(Comment.objects.get(id=obj.id).content_object, BlogPost):
-                    action.send(request.user, verb=_('liked the review'), target=obj,  batch_time_minutes=30, is_batchable=True)
+                    action.send(request.user, verb=settings.REVIEW_LIKE_VERB, target=obj,  batch_time_minutes=30, is_batchable=True)
                 if model.__name__=='Image':
-                    action.send(request.user, verb=_('liked the photo'), target=obj, batch_time_minutes=30, is_batchable=True)
+                    action.send(request.user, verb=settings.PHOTO_LIKE_VERB, target=obj, batch_time_minutes=30, is_batchable=True)
                 if model.__name__=='UserWishRadio':
                     owner = obj.content_type.get_object_for_this_type(pk=obj.object_id)
                     if isinstance(owner, BlogPost):
-                        action.send(request.user, verb=_('liked the deal'), target=obj, batch_time_minutes=30, is_batchable=True)
+                        action.send(request.user, verb=settings.DEAL_LIKE_VERB, target=obj, batch_time_minutes=30, is_batchable=True)
                     elif isinstance(owner, User):
-                        action.send(request.user, verb=_('liked the wish'), target=obj, batch_time_minutes=30, is_batchable=True)
+                        action.send(request.user, verb=settings.WISH_LIKE_VERB, target=obj, batch_time_minutes=30, is_batchable=True)
                     else:
                         """
                         Do Nothing
@@ -190,16 +192,16 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     actions.follow(request.user, obj, send_action=False, actor_only=False)
                     Follow.objects.get_or_create(request.user, obj)                    
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
-                    action.send(request.user, verb=_('liked the comment on the album'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
+                    action.send(request.user, verb=settings.ALBUM_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
-                    action.send(request.user, verb=_('liked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
+                    action.send(request.user, verb=settings.IMAGE_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, UserWishRadio):
                     contentObject = Comment.objects.get(id=obj.id).content_object
                     owner = contentObject.content_type.get_object_for_this_type(pk=contentObject.object_id)
                     if isinstance(owner, BlogPost):
-                        action.send(request.user, verb=_('liked the comment on the deal'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
+                        action.send(request.user, verb=settings.DEAL_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
                     elif isinstance(owner, User):
-                        action.send(request.user, verb=_('liked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
+                        action.send(request.user, verb=settings.WISH_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
                     else:
                         """
                         Do Nothing
@@ -214,31 +216,31 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     #action.send(request.user, verb=_('disliked the album'), target=obj)
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(obj)
-                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the album', target_content_type=target_content_type, target_object_id = obj.id ).delete() 
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.ALBUM_LIKE_WISH, target_content_type=target_content_type, target_object_id = obj.id ).delete() 
                 if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, Review):
                     #action.send(request.user, verb=_('disliked the comment on the review'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)   
                     target = Comment.objects.get(id=obj.id).content_object
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(target)
                     action_object_content_type = ContentType.objects.get_for_model(obj)
-                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the comment on the review', action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.REVIEW_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()
                 if model.__name__=='Review':
                     #action.send(request.user, verb=_('disliked the review on'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)  
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(obj)
-                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the review', target_content_type=target_content_type, target_object_id = obj.id ).delete()                 
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.REVIEW_LIKE_VERB, target_content_type=target_content_type, target_object_id = obj.id ).delete()                 
                 if model.__name__=='Image':
                     #action.send(request.user, verb=_('disliked the photo'), target=obj)
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(obj)
-                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the photo', target_content_type=target_content_type, target_object_id = obj.id ).delete() 
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.PHOTO_LIKE_VERB, target_content_type=target_content_type, target_object_id = obj.id ).delete() 
                 if model.__name__=='UserWishRadio':
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(obj)
                     if obj.prefix_message == "I have a deal for":
-                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the deal', target_content_type=target_content_type, target_object_id=obj.id ).delete()                 
+                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.DEAL_LIKE_VERB, target_content_type=target_content_type, target_object_id=obj.id ).delete()                 
                     elif obj.prefix_message == "I wish to buy":
-                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the wish', target_content_type=target_content_type, target_object_id=obj.id ).delete()                 
+                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.WISH_LIKE_VERB, target_content_type=target_content_type, target_object_id=obj.id ).delete()                 
                     
                     actions.unfollow(request.user, obj, send_action=False)
                     follow = Follow.objects.get_follows(obj).filter(user=request.user)
@@ -251,14 +253,14 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(target)
                     action_object_content_type = ContentType.objects.get_for_model(obj)
-                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the comment on the album', action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                 
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.ALBUM_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                 
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
                     #action.send(request.user, verb=_('disliked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                     target = Comment.objects.get(id=obj.id).content_object
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(target)
                     action_object_content_type = ContentType.objects.get_for_model(obj)
-                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the comment on the image', action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                 
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.IMAGE_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                 
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, UserWishRadio):
                     target = Comment.objects.get(id=obj.id).content_object
                     ctype = ContentType.objects.get_for_model(request.user)
@@ -266,10 +268,10 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action_object_content_type = ContentType.objects.get_for_model(obj)
                     if target.prefix_message == "I have a deal for":
                         #action.send(request.user, verb=_('disliked the comment on the deal'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
-                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the comment on the deal', action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                         
+                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.DEAL_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                         
                     elif target.prefix_message == "I wish to buy":
                         #action.send(request.user, verb=_('disliked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
-                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=u'liked the comment on the wish', action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                     
+                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.WISH_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                     
                     else:
                         """
                         Do Nothing
