@@ -296,7 +296,11 @@ def xmlhttprequest_vote_on_object(request, model, direction,
 def get_voters_info(request, content_type_id, object_id):
     ctype = get_object_or_404(ContentType, pk=content_type_id)
     object = get_object_or_404(ctype.model_class(), pk=object_id)
-
-    return render_to_response("friend_list_all.html", {
-        "friends": Vote.objects.get_voters(object),
-    }, context_instance=RequestContext(request))
+    if request.is_ajax():
+        return render_to_response("friend_list_all.html", {
+            "friends": Vote.objects.get_voters(object),
+        }, context_instance=RequestContext(request))
+    else:
+        return render_to_response("render_friend_list_all.html", {
+            "friends": Vote.objects.get_voters(object),
+        }, context_instance=RequestContext(request))
