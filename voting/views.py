@@ -17,7 +17,7 @@ from voting.models import Vote
 from actstream import action, actions
 from actstream.models import Action
 from imagestore.models import Album, Image
-from userProfile.models import UserWishRadio
+from userProfile.models import GenericWish, BroadcastWish, BroadcastDeal
 from follow.models import Follow
 
 VOTE_DIRECTIONS = (('up', 1), ('down', -1), ('clear', 0))
@@ -179,35 +179,35 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action.send(request.user, verb=settings.REVIEW_LIKE_VERB, target=obj,  batch_time_minutes=30, is_batchable=True)
                 if model.__name__=='Image':
                     action.send(request.user, verb=settings.PHOTO_LIKE_VERB, target=obj, batch_time_minutes=30, is_batchable=True)
-                if model.__name__=='UserWishRadio':
-                    owner = obj.content_type.get_object_for_this_type(pk=obj.object_id)
-                    if isinstance(owner, BlogPost):
-                        action.send(request.user, verb=settings.DEAL_LIKE_VERB, target=obj, batch_time_minutes=30, is_batchable=True)
-                    elif isinstance(owner, User):
-                        action.send(request.user, verb=settings.WISH_LIKE_VERB, target=obj, batch_time_minutes=30, is_batchable=True)
-                    else:
-                        """
-                        Do Nothing
-                        """
+                if model.__name__=='BroadcastWish':
+                    action.send(request.user, verb=settings.WISH_LIKE_VERB, target=obj, batch_time_minutes=30, is_batchable=True)
+                    actions.follow(request.user, obj, send_action=False, actor_only=False)
+                    Follow.objects.get_or_create(request.user, obj) 
+                if model.__name__=='BroadcastDeal':
+                    action.send(request.user, verb=settings.DEAL_LIKE_VERB, target=obj, batch_time_minutes=30, is_batchable=True)
+                    actions.follow(request.user, obj, send_action=False, actor_only=False)
+                    Follow.objects.get_or_create(request.user, obj) 
+                if model.__name__=='GenericWish':
+                    action.send(request.user, verb=settings.POST_LIKE_VERB, target=obj, batch_time_minutes=30, is_batchable=True)
                     actions.follow(request.user, obj, send_action=False, actor_only=False)
                     Follow.objects.get_or_create(request.user, obj)                    
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Album):
                     action.send(request.user, verb=settings.ALBUM_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
                     action.send(request.user, verb=settings.IMAGE_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
-                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, UserWishRadio):
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, GenericWish):
+                    action.send(request.user, verb=settings.POST_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True) 
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, BroadcastWish):
                     contentObject = Comment.objects.get(id=obj.id).content_object
-                    owner = contentObject.content_type.get_object_for_this_type(pk=contentObject.object_id)
-                    if isinstance(owner, BlogPost):
-                        action.send(request.user, verb=settings.DEAL_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
-                    elif isinstance(owner, User):
-                        action.send(request.user, verb=settings.WISH_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
-                    else:
-                        """
-                        Do Nothing
-                        """
+                    action.send(request.user, verb=settings.WISH_COMMENT_LIKE_VERB, action_object=obj, target=contentObject, batch_time_minutes=30, is_batchable=True)
                     actions.follow(request.user, contentObject, send_action=False, actor_only=False) 
                     Follow.objects.get_or_create(request.user, contentObject)
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, BroadcastDeal):
+                    contentObject = Comment.objects.get(id=obj.id).content_object
+                    action.send(request.user, verb=settings.DEAL_COMMENT_LIKE_VERB, action_object=obj, target=contentObject, batch_time_minutes=30, is_batchable=True)
+                    actions.follow(request.user, contentObject, send_action=False, actor_only=False) 
+                    Follow.objects.get_or_create(request.user, contentObject)                
+
                 if obj.user and obj.user.is_authenticated():
                     obj.user.num_likes = obj.user.num_likes + 1
                     obj.user.save()
@@ -234,13 +234,28 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(obj)
                     Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.PHOTO_LIKE_VERB, target_content_type=target_content_type, target_object_id = obj.id ).delete() 
-                if model.__name__=='UserWishRadio':
+                if model.__name__=='BroadcastWish':
+                    #action.send(request.user, verb=_('disliked the photo'), target=obj)
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(obj)
-                    if obj.prefix_message == "I have a deal for":
-                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.DEAL_LIKE_VERB, target_content_type=target_content_type, target_object_id=obj.id ).delete()                 
-                    elif obj.prefix_message == "I wish to buy":
-                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.WISH_LIKE_VERB, target_content_type=target_content_type, target_object_id=obj.id ).delete()                 
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.WISH_LIKE_VERB, target_content_type=target_content_type, target_object_id = obj.id ).delete() 
+                    actions.unfollow(request.user, obj, send_action=False)
+                    follow = Follow.objects.get_follows(obj).filter(user=request.user)
+                    if follow:
+                        follow.delete()                
+                if model.__name__=='BroadcastDeal':
+                    #action.send(request.user, verb=_('disliked the photo'), target=obj)
+                    ctype = ContentType.objects.get_for_model(request.user)
+                    target_content_type = ContentType.objects.get_for_model(obj)
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.DEAL_LIKE_VERB, target_content_type=target_content_type, target_object_id = obj.id ).delete()                     
+                    actions.unfollow(request.user, obj, send_action=False)
+                    follow = Follow.objects.get_follows(obj).filter(user=request.user)
+                    if follow:
+                        follow.delete()                
+                if model.__name__=='GenericWish':
+                    ctype = ContentType.objects.get_for_model(request.user)
+                    target_content_type = ContentType.objects.get_for_model(obj)
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.POST_LIKE_VERB, target_content_type=target_content_type, target_object_id = obj.id ).delete()                     
                     
                     actions.unfollow(request.user, obj, send_action=False)
                     follow = Follow.objects.get_follows(obj).filter(user=request.user)
@@ -261,25 +276,39 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     target_content_type = ContentType.objects.get_for_model(target)
                     action_object_content_type = ContentType.objects.get_for_model(obj)
                     Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.IMAGE_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                 
-                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, UserWishRadio):
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, GenericWish):
+                    #action.send(request.user, verb=_('disliked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                     target = Comment.objects.get(id=obj.id).content_object
                     ctype = ContentType.objects.get_for_model(request.user)
                     target_content_type = ContentType.objects.get_for_model(target)
                     action_object_content_type = ContentType.objects.get_for_model(obj)
-                    if target.prefix_message == "I have a deal for":
-                        #action.send(request.user, verb=_('disliked the comment on the deal'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
-                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.DEAL_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                         
-                    elif target.prefix_message == "I wish to buy":
-                        #action.send(request.user, verb=_('disliked the comment on the wish'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
-                        Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.WISH_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                     
-                    else:
-                        """
-                        Do Nothing
-                        """
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.POST_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete() 
                     actions.unfollow(request.user, target, send_action=False)
                     follow = Follow.objects.get_follows(target).filter(user=request.user)
                     if follow:
-                        follow.delete()
+                        follow.delete()                
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, BroadcastWish):
+                    #action.send(request.user, verb=_('disliked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                    target = Comment.objects.get(id=obj.id).content_object
+                    ctype = ContentType.objects.get_for_model(request.user)
+                    target_content_type = ContentType.objects.get_for_model(target)
+                    action_object_content_type = ContentType.objects.get_for_model(obj)
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.WISH_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete() 
+                    actions.unfollow(request.user, target, send_action=False)
+                    follow = Follow.objects.get_follows(target).filter(user=request.user)
+                    if follow:
+                        follow.delete() 
+                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, BroadcastDeal):
+                    #action.send(request.user, verb=_('disliked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                    target = Comment.objects.get(id=obj.id).content_object
+                    ctype = ContentType.objects.get_for_model(request.user)
+                    target_content_type = ContentType.objects.get_for_model(target)
+                    action_object_content_type = ContentType.objects.get_for_model(obj)
+                    Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.DEAL_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete() 
+                    follow = Follow.objects.get_follows(target).filter(user=request.user)
+                    if follow:
+                        follow.delete() 
+
                 if obj.user and obj.user.is_authenticated() and vote==-1: 
                     obj.user.num_dislikes = obj.user.num_dislikes + 1 
                     obj.user.save()
