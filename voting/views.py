@@ -47,11 +47,16 @@ def vote_on_object(request, model, direction, post_vote_redirect=None,
         direction
             The type of vote which will be registered for the object.
     """
+    """
+        Voting is only allowed via AJAX. Otherwise raise 404 error.
+    """
     if allow_xmlhttprequest and request.is_ajax():
         return xmlhttprequest_vote_on_object(request, model, direction,
                                              object_id=object_id, slug=slug,
                                              slug_field=slug_field)
-
+    else:
+        raise Http404()
+        
     if extra_context is None: extra_context = {}
     if not request.user.is_authenticated():
         return redirect_to_login(request.path)
