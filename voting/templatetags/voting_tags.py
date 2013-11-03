@@ -37,6 +37,25 @@ class VotersForObjectNode(template.Node):
         context[self.context_var] = reverse('get_voters_info', kwargs={'content_type_id': content_type, 'object_id': object.pk })
         return ''  
 
+class VotersIncForObjectNode(template.Node):
+    def __init__(self, object, sIndex, lIndex, context_var):
+        self.object = object
+        self.context_var = context_var
+        self.sIndex = sIndex
+        self.lIndex = lIndex
+
+    def render(self, context):
+        try:
+            object = template.resolve_variable(self.object, context)
+            content_type = ContentType.objects.get_for_model(object).pk
+        except template.VariableDoesNotExist:
+            return ''
+        context[self.context_var] = reverse('get_voters_info_inc', kwargs={'content_type_id': content_type, 
+                                                                       'object_id': object.pk,
+                                                                       'sIndex':self.sIndex,
+                                                                       'lIndex':self.lIndex })
+        return '' 
+
 class ScoresForObjectsNode(template.Node):
     def __init__(self, objects, context_var):
         self.objects = objects
@@ -132,6 +151,23 @@ def do_voters_for_object(parser, token):
         raise template.TemplateSyntaxError("second argument to '%s' tag must be 'as'" % bits[0])
     return VotersForObjectNode(bits[1], bits[3])
 
+def do_voters_inc_for_object(parser, token):
+    """
+    Retrieves the list of voters for an object and stores them in a context variable which has
+    ``voters`` property.
+
+    Example usage::
+
+        {% voters_for_object widget sIndex lIndex as voters %}
+        {{ voters.voters }}
+    """
+    bits = token.contents.split()
+    if len(bits) != 6:
+        raise template.TemplateSyntaxError("'%s' tag takes exactly three arguments" % bits[0])
+    if bits[4] != 'as':
+        raise template.TemplateSyntaxError("second argument to '%s' tag must be 'as'" % bits[0])
+    return VotersIncForObjectNode(bits[1], bits[2], bits[3], bits[5])
+
 def do_scores_for_objects(parser, token):
     """
     Retrieves the total scores for a list of objects and the number of
@@ -209,6 +245,7 @@ def do_dict_entry_for_item(parser, token):
 
 register.tag('score_for_object', do_score_for_object)
 register.tag('voters_for_object', do_voters_for_object)
+register.tag('voters_inc_for_object', do_voters_inc_for_object)
 register.tag('scores_for_objects', do_scores_for_objects)
 register.tag('vote_by_user', do_vote_by_user)
 register.tag('votes_by_user', do_votes_by_user)

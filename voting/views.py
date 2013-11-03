@@ -3,12 +3,14 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.views import redirect_to_login
 from django.template import loader, RequestContext
+from django.template.loader import render_to_string
 from django.utils import simplejson
 from django.contrib.comments.models import Comment
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response, get_object_or_404
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.core.urlresolvers import reverse
 
 from mezzanine.generic.models import ThreadedComment, Review
 from mezzanine.blog.models import BlogPost
@@ -19,6 +21,8 @@ from actstream.models import Action
 from imagestore.models import Album, Image
 from userProfile.models import GenericWish, BroadcastWish, BroadcastDeal
 from follow.models import Follow
+
+import json
 
 VOTE_DIRECTIONS = (('up', 1), ('down', -1), ('clear', 0))
 
@@ -337,4 +341,47 @@ def get_voters_info(request, content_type_id, object_id):
     else:
         return render_to_response("render_friend_list_all.html", {
             "friends": Vote.objects.get_voters(object),
+        }, context_instance=RequestContext(request))
+
+def get_voters_info_inc(request, content_type_id, object_id, sIndex=0, lIndex=0):
+    ctype = get_object_or_404(ContentType, pk=content_type_id)
+    object = get_object_or_404(ctype.model_class(), pk=object_id)
+    
+    s = (int)(""+sIndex)
+    l = (int)(""+lIndex)
+    if s == 0:
+        data_href = reverse('get_voters_info_inc', kwargs={ 'content_type_id':content_type_id,
+                                                            'object_id':object_id,
+                                                            'sIndex':0,
+                                                            'lIndex': settings.MIN_VOTERS_CHUNK})
+        return render_to_response("friend_list_all.html", {
+            "friends": Vote.objects.get_voters_inc(object, s, l),
+            'is_incremental': False,
+            'data_href':data_href
+        }, context_instance=RequestContext(request))
+
+    sub_voters = Vote.objects.get_voters_inc(object, s, l)
+
+    if request.is_ajax():
+        context = RequestContext(request)
+
+        context.update({'friends': sub_voters,
+                        'is_incremental': True})
+
+        template = 'friend_list_all.html'
+        if sub_voters:
+            ret_data = {
+                'html': render_to_string(template, context_instance=context).strip(),
+                'success': True
+            }
+        else:
+            ret_data = {
+                'success': False
+            }
+
+        return HttpResponse(json.dumps(ret_data), mimetype="application/json")
+
+    else:
+        return render_to_response("render_friend_list_all.html", {
+            "friends": sub_voters,
         }, context_instance=RequestContext(request))
