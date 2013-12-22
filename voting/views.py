@@ -183,7 +183,7 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                 if model.__name__=='Album':
                     action.send(request.user, verb=settings.ALBUM_LIKE_WISH, target=obj, batch_time_minutes=30, is_batchable=True)
                 if model.__name__=='ThreadedComment' and isinstance(Comment.objects.get(id=obj.id).content_object, Review):
-                    action.send(request.user, verb=settings.REVIEW_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
+                    action.send(request.user, verb=settings.REVIEW_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
                 if model.__name__=='Review' and isinstance(Comment.objects.get(id=obj.id).content_object, BlogPost):
                     action.send(request.user, verb=settings.REVIEW_LIKE_VERB, target=obj,  batch_time_minutes=30, is_batchable=True)
                 if model.__name__=='Image':
