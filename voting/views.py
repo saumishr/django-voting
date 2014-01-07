@@ -357,7 +357,8 @@ def get_voters_info_inc(request, content_type_id, object_id, sIndex=0, lIndex=0)
         return render_to_response("friend_list_all.html", {
             "friends": Vote.objects.get_voters_inc(object, s, l),
             'is_incremental': False,
-            'data_href':data_href
+            'data_href':data_href,
+            'data_chunk':settings.MIN_VOTERS_CHUNK
         }, context_instance=RequestContext(request))
 
     sub_voters = Vote.objects.get_voters_inc(object, s, l)
