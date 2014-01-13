@@ -204,14 +204,14 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     action.send(request.user, verb=settings.ALBUM_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
                 if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, Image):
                     action.send(request.user, verb=settings.IMAGE_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True)
-                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, GenericWish):
+                if model.__name__ == "ThreadedComment" and type(Comment.objects.get(id=obj.id).content_object) == GenericWish:
                     action.send(request.user, verb=settings.POST_COMMENT_LIKE_VERB, action_object=obj, target=Comment.objects.get(id=obj.id).content_object, batch_time_minutes=30, is_batchable=True) 
-                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, BroadcastWish):
+                if model.__name__ == "ThreadedComment" and type(Comment.objects.get(id=obj.id).content_object) == BroadcastWish:
                     contentObject = Comment.objects.get(id=obj.id).content_object
                     action.send(request.user, verb=settings.WISH_COMMENT_LIKE_VERB, action_object=obj, target=contentObject, batch_time_minutes=30, is_batchable=True)
                     actions.follow(request.user, contentObject, send_action=False, actor_only=False) 
                     Follow.objects.get_or_create(request.user, contentObject)
-                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, BroadcastDeal):
+                if model.__name__ == "ThreadedComment" and type(Comment.objects.get(id=obj.id).content_object) == BroadcastDeal:
                     contentObject = Comment.objects.get(id=obj.id).content_object
                     action.send(request.user, verb=settings.DEAL_COMMENT_LIKE_VERB, action_object=obj, target=contentObject, batch_time_minutes=30, is_batchable=True)
                     actions.follow(request.user, contentObject, send_action=False, actor_only=False) 
@@ -285,7 +285,7 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     target_content_type = ContentType.objects.get_for_model(target)
                     action_object_content_type = ContentType.objects.get_for_model(obj)
                     Action.objects.all().filter(actor_content_type=ctype, actor_object_id=request.user.id, verb=settings.IMAGE_COMMENT_LIKE_VERB, action_object_content_type=action_object_content_type, action_object_object_id=obj.id, target_content_type=target_content_type, target_object_id = target.id ).delete()                 
-                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, GenericWish):
+                if model.__name__ == "ThreadedComment" and type(Comment.objects.get(id=obj.id).content_object) ==  GenericWish:
                     #action.send(request.user, verb=_('disliked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                     target = Comment.objects.get(id=obj.id).content_object
                     ctype = ContentType.objects.get_for_model(request.user)
@@ -296,7 +296,7 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     follow = Follow.objects.get_follows(target).filter(user=request.user)
                     if follow:
                         follow.delete()                
-                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, BroadcastWish):
+                if model.__name__ == "ThreadedComment" and type(Comment.objects.get(id=obj.id).content_object) == BroadcastWish:
                     #action.send(request.user, verb=_('disliked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                     target = Comment.objects.get(id=obj.id).content_object
                     ctype = ContentType.objects.get_for_model(request.user)
@@ -307,7 +307,7 @@ def xmlhttprequest_vote_on_object(request, model, direction,
                     follow = Follow.objects.get_follows(target).filter(user=request.user)
                     if follow:
                         follow.delete() 
-                if model.__name__ == "ThreadedComment" and isinstance(Comment.objects.get(id=obj.id).content_object, BroadcastDeal):
+                if model.__name__ == "ThreadedComment" and type(Comment.objects.get(id=obj.id).content_object) == BroadcastDeal:
                     #action.send(request.user, verb=_('disliked the comment on the image'), action_object=obj, target=Comment.objects.get(id=obj.id).content_object)
                     target = Comment.objects.get(id=obj.id).content_object
                     ctype = ContentType.objects.get_for_model(request.user)
