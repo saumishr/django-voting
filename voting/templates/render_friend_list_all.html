@@ -16,10 +16,10 @@
                     {% include 'actstream/render_actor_name.html' with actor=friend %}  
                 </div>
                 <div class="span1 halfGutter">
-                    <span id="vendorFollowContainer" class="vendorFollowContainer makeYellowButton pagination-centered {% if_relationship request.user friend "following" %} following {% endif_relationship %}" >
-                        <a href="javascript:void(0)" class="follow-btn icon-follow" data-href="{{ friend|add_relationship_url:"following" }}">{% trans "Follow" %}</a>
-                        <a class="icon-following radioColor" ><img class="noBoxShadow" src="{% static 'img/1transparent.png' %}">{% trans "Following" %}</a>
-                        <a href="javascript:void(0)" class="unfollow-btn icon-unfollow radioColor" data-href="{{ friend|remove_relationship_url:"following" }}"><img class="noBoxShadow" src="{% static 'img/1transparent.png' %}">{% trans "Unfollow" %}</a>
+                    <span id="vendorFollowContainer" class="vendorFollowContainer pagination-centered {% if_relationship request.user friend "following" %} following {% endif_relationship %}" >
+                        <button class="follow-btn makeYellowButton icon-follow" data-href="{{ friend|add_relationship_url:"following" }}">{% trans "Follow" %}</button>
+                        <button class="icon-following makeYellowButton radioColor" ><img class="noBoxShadow" src="{% static 'img/1transparent.png' %}">{% trans "Following" %}</button>
+                        <button class="unfollow-btn makeYellowButton icon-unfollow radioColor" data-href="{{ friend|remove_relationship_url:"following" }}"><img class="noBoxShadow" src="{% static 'img/1transparent.png' %}">{% trans "Unfollow" %}</button>
                     </span>
                 </div>
             {% else %}
